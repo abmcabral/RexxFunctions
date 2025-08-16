@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 class RexxFunctions:
-    """COMPLETE and implementation of REXX functions"""
+    """Complete REXX functions implementation with EOF control in linein()"""
 
     # Constants
     FILE_NOT_FOUND = 0xEEEEEEEE
@@ -10,25 +10,24 @@ class RexxFunctions:
 
     def __init__(self, exit_on_error=True, verbose=True):
         """
-        Initialization:
+        Initialize with:
         - exit_on_error: Terminate program on errors (default: True)
         - verbose: Show detailed messages (default: True)
         """
-        self._file_positions = {}  # File position tracking
+        self._file_positions = {}
         self.exit_on_error = exit_on_error
         self.verbose = verbose
-        self.next_record = 0  # Legacy code compatibility
+        self.next_record = 0
 
-    # =========================================
-    # FILE FUNCTIONS (CORRECTED IMPLEMENTATION)
-    # =========================================
-
-    def linein(self, file_path, line_number=None):
-        """Read a file line with robust error handling"""
+    def linein(self, file_path, line_number=None, exit_on_eof=True):
+        """
+        Read a file line with EOF control:
+        - exit_on_eof=True: Exit program on EOF (default)
+        - exit_on_eof=False: Return END_OF_FILE constant
+        """
         try:
             path = Path(file_path).absolute()
             
-            # Explicit verification BEFORE opening file
             if not path.exists():
                 msg = f"File does not exist: {path}"
                 if self.verbose:
@@ -45,15 +44,12 @@ class RexxFunctions:
                     sys.exit(1)
                 return self.FILE_NOT_FOUND
 
-            # Position control
             file_key = str(path)
             if file_key not in self._file_positions:
                 self._file_positions[file_key] = 0
 
-            # Determine which line to read
             target_line = (self._file_positions[file_key] + 1) if line_number is None else line_number
 
-            # File reading
             with open(path, 'r') as file:
                 for current_line, content in enumerate(file, 1):
                     if current_line == target_line:
@@ -64,7 +60,7 @@ class RexxFunctions:
                 # EOF handling
                 if line_number is None:
                     self._file_positions[file_key] = 0
-                if self.exit_on_error:
+                if exit_on_eof and self.exit_on_error:
                     sys.exit(0)
                 return self.END_OF_FILE
 
@@ -88,7 +84,6 @@ class RexxFunctions:
         """Delete file with guaranteed feedback"""
         path = Path(file_path).absolute()
         
-        # Explicit verification
         if not path.exists():
             msg = f"File does not exist (not deleted): {path}"
             if self.verbose:
@@ -96,7 +91,7 @@ class RexxFunctions:
             return self.FILE_NOT_FOUND
 
         try:
-            path.unlink()  # Delete file
+            path.unlink()
             if self.verbose:
                 print(f"File successfully deleted: {path}")
             return 0
@@ -123,7 +118,7 @@ class RexxFunctions:
             return 1
 
     # =========================================
-    # STRING FUNCTIONS (ORIGINAL IMPLEMENTATION)
+    # STRING FUNCTIONS (Original implementation)
     # =========================================
 
     @staticmethod
